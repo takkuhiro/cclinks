@@ -1,0 +1,39 @@
+[project]
+name = "cclinks"
+version = "0.1.0"
+description = "Open links from a Claude Code session with the keyboard, including Markdown links the terminal never shows"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "takkuhiro" }]
+keywords = ["claude-code", "fzf", "links", "terminal", "cli"]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: Utilities",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/takkuhiro/cclinks"
+Issues = "https://github.com/takkuhiro/cclinks/issues"
+
+[project.scripts]
+cclinks = "cclinks.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cclinks"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

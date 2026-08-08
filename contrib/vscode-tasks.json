@@ -1,0 +1,40 @@
+// A user-level task for VS Code / Cursor.
+// Install to:
+//   Cursor:  ~/Library/Application Support/Cursor/User/tasks.json
+//   VS Code: ~/Library/Application Support/Code/User/tasks.json
+//
+// Then add this to keybindings.json to reach it with one key:
+//   {
+//     "key": "alt+cmd+q",
+//     "command": "workbench.action.tasks.runTask",
+//     "args": "cclinks",
+//     "when": "terminalFocus"
+//   }
+//
+// The task shell does not inherit an interactive PATH, which is why the command
+// is an absolute path and PATH is spelled out.
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "cclinks",
+      "type": "shell",
+      "command": "${userHome}/.local/bin/cclinks --latest",
+      "options": {
+        "env": {
+          "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${env:PATH}"
+        }
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "close": true,
+        "clear": true,
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    }
+  ]
+}
