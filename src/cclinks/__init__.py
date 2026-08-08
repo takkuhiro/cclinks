@@ -1,3 +1,11 @@
 """Open links from a Claude Code session."""
 
-__version__ = "0.1.0"
+from importlib.metadata import PackageNotFoundError, version
+
+__all__ = ["__version__"]
+
+try:
+    # pyproject is the only place the version is written down.
+    __version__ = version("cclinks")
+except PackageNotFoundError:  # a source tree with nothing installed
+    __version__ = "0.0.0+unknown"
