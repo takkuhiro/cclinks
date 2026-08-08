@@ -1,0 +1,2 @@
+{"type": "user", "message": {"role": "user", "content": "Give me a few references."}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": "Here are the references for what we discussed.\n\n- [Astral's uv documentation](https://docs.astral.sh/uv/)\n- [The fzf repository](https://github.com/junegunn/fzf)\n- [Ruff's rule index](https://docs.astral.sh/ruff/rules/)\n- [DuckDB documentation](https://duckdb.org/docs/)\n- [The Rust book](https://doc.rust-lang.org/book/)\n\nLet me know which one you want to dig into."}]}}

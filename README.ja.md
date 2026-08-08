@@ -10,12 +10,7 @@ VS Code の *Open Detected Link*）はどれも見つけられない。画面上
 
 `cclinks` は代わりにセッションのトランスクリプトを読む。そこには URL が残っている。
 
-```
-$ cclinks
-> uv
-  Astral の uv 公式ドキュメント  ⟶  https://docs.astral.sh/uv/
-  uv tool のドキュメント         ⟶  https://docs.astral.sh/uv/concepts/tools/
-```
+![cclinks in action](docs/demo.gif)
 
 矢印キーか入力で絞り込み、Enter でブラウザが開く。
 

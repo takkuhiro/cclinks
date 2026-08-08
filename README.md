@@ -10,12 +10,7 @@ VS Code's *Open Detected Link* — cannot find it. There is nothing on screen to
 
 `cclinks` reads the session transcript instead, where the URLs are still intact.
 
-```
-$ cclinks
-> uv
-  Astral's uv documentation  ⟶  https://docs.astral.sh/uv/
-  uv tool documentation      ⟶  https://docs.astral.sh/uv/concepts/tools/
-```
+![cclinks in action](docs/demo.gif)
 
 Pick with the arrow keys or by typing, press Enter, and the link opens in your browser.
 
