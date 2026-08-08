@@ -12,6 +12,9 @@ VS Code の *Open Detected Link*）はどれも見つけられない。画面上
 
 ![cclinks in action](docs/demo.gif)
 
+ポップアップの背後にある `Sources:` が、Claude Code が実際に描画したもの。ラベルだけで、
+URL は1つも無い。選択画面にはその11件すべてが並ぶ。
+
 矢印キーか入力で絞り込み、Enter でブラウザが開く。
 
 ## 画面スクレイプでは何が足りないのか

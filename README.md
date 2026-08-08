@@ -12,6 +12,9 @@ VS Code's *Open Detected Link* — cannot find it. There is nothing on screen to
 
 ![cclinks in action](docs/demo.gif)
 
+The `Sources:` list behind the popup is what Claude Code actually printed: labels, and not
+one URL among them. The picker has all eleven.
+
 Pick with the arrow keys or by typing, press Enter, and the link opens in your browser.
 
 ## Why not just scrape the screen?
