@@ -37,6 +37,15 @@ class TestFormat:
 
 
 class TestMain:
+    @pytest.fixture(autouse=True)
+    def fzf_present(self, monkeypatch):
+        """Pretend fzf is installed.
+
+        Without this the picker path is never reached on a machine that has no
+        fzf, and these tests would pass locally while failing in CI.
+        """
+        monkeypatch.setattr(cli, "find_fzf", lambda: "/usr/bin/fzf")
+
     @pytest.fixture
     def opened(self, monkeypatch):
         calls = []
