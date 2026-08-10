@@ -17,14 +17,23 @@ one URL among them. The picker has all eleven.
 
 Pick with the arrow keys or by typing, press Enter, and the link opens in your browser.
 
-## Why not just scrape the screen?
+## Why not just scrape the screen, or click the link?
 
-|                          | Screen scraping | cclinks |
-| ------------------------ | --------------- | ------------ |
-| Bare URLs                | Yes             | Yes          |
-| Markdown links           | **No**          | Yes          |
-| Scrolled out of view     | **No**          | Yes          |
-| Label available for search | No            | Yes          |
+|                              | Screen scraping | Ctrl/⌘-click | cclinks |
+| ---------------------------- | --------------- | ------------ | ------- |
+| Bare URLs                    | Yes             | Yes          | Yes     |
+| Markdown links               | **No**          | Yes¹         | Yes     |
+| Scrolled out of view         | **No**          | **No**       | Yes     |
+| Label available for search   | No              | No           | Yes     |
+| Without leaving the keyboard | Yes             | **No**       | Yes     |
+
+¹ In terminals that render OSC 8 hyperlinks — iTerm2, WezTerm, Ghostty, the VS Code and
+Cursor integrated terminals. The URL is still absent from the buffer; the terminal holds it
+out of band.
+
+Clicking works, and it is the reason this tool is not about *reaching* the link. It is about
+not moving your hand to reach it. If your hands are on the keyboard while Claude is talking,
+they stay there.
 
 Screen scrapers are still useful for file paths and for output from other programs.
 The two complement each other; bind them to neighbouring keys.
@@ -99,8 +108,11 @@ alias ccl='cclinks'
 
 ### VS Code / Cursor task
 
-Put this in `~/Library/Application Support/Cursor/User/tasks.json` (or the `Code` equivalent),
-then bind a key to `workbench.action.tasks.runTask` with `args: "cclinks"`.
+Two files, both in the user directory rather than a workspace, so the key also works in a
+window with no folder open.
+
+First the task, in `~/Library/Application Support/Cursor/User/tasks.json` (for VS Code,
+`Code` in place of `Cursor`).
 
 ```jsonc
 {
@@ -125,6 +137,20 @@ then bind a key to `workbench.action.tasks.runTask` with `args: "cclinks"`.
 
 The task shell does not inherit your interactive `PATH`, which is why the command and the
 `PATH` entry are spelled out.
+
+Then the key, in `keybindings.json` beside it:
+
+```jsonc
+{
+  "key": "alt+cmd+q",
+  "command": "workbench.action.tasks.runTask",
+  "args": "cclinks",
+  "when": "terminalFocus"
+}
+```
+
+`terminalFocus` keeps the binding to the terminal, so the key stays free while you are
+editing. Drop it to reach the picker from anywhere in the window.
 
 ### Raycast
 
