@@ -20,10 +20,21 @@ def links_from_texts(texts) -> list[Link]:
     return result
 
 
-def links_for_session(cwd: str | None, source: Source | None = None) -> list[Link]:
-    """Links from the session for `cwd`, or from the newest one when cwd is None."""
+def links_for_session(
+    cwd: str | None, source: Source | None = None, active: bool = False
+) -> list[Link]:
+    """Links from the session for `cwd`, or from the newest one when cwd is None.
+
+    With `active`, prefer the session the user last typed into. That record only
+    exists once the hook is installed, so an unrecorded session falls through to
+    the usual lookup rather than coming back empty.
+    """
     source = source or get()
-    transcript = source.find_transcript(cwd)
+    transcript = None
+    if active and source.active_transcript is not None:
+        transcript = source.active_transcript()
+    if transcript is None:
+        transcript = source.find_transcript(cwd)
     if transcript is None:
         return []
     return links_from_texts(source.message_texts(transcript))

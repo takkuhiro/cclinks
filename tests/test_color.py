@@ -19,7 +19,7 @@ class TestPlainFormatting:
         assert "\x1b[" not in cli.format_line(LABELLED)
 
     def test_print_mode_stays_plain(self, monkeypatch, capsys):
-        monkeypatch.setattr(cli, "collect_links", lambda cwd: [LABELLED])
+        monkeypatch.setattr(cli, "collect_links", lambda cwd, active=False: [LABELLED])
         cli.main(["--print"])
         assert "\x1b[" not in capsys.readouterr().out
 
