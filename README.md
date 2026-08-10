@@ -108,8 +108,11 @@ alias ccl='cclinks'
 
 ### VS Code / Cursor task
 
-Put this in `~/Library/Application Support/Cursor/User/tasks.json` (or the `Code` equivalent),
-then bind a key to `workbench.action.tasks.runTask` with `args: "cclinks"`.
+Two files, both in the user directory rather than a workspace, so the key also works in a
+window with no folder open.
+
+First the task, in `~/Library/Application Support/Cursor/User/tasks.json` (for VS Code,
+`Code` in place of `Cursor`).
 
 ```jsonc
 {
@@ -134,6 +137,20 @@ then bind a key to `workbench.action.tasks.runTask` with `args: "cclinks"`.
 
 The task shell does not inherit your interactive `PATH`, which is why the command and the
 `PATH` entry are spelled out.
+
+Then the key, in `keybindings.json` beside it:
+
+```jsonc
+{
+  "key": "alt+cmd+q",
+  "command": "workbench.action.tasks.runTask",
+  "args": "cclinks",
+  "when": "terminalFocus"
+}
+```
+
+`terminalFocus` keeps the binding to the terminal, so the key stays free while you are
+editing. Drop it to reach the picker from anywhere in the window.
 
 ### Raycast
 

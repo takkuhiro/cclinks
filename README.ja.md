@@ -106,8 +106,11 @@ alias ccl='cclinks'
 
 ### VS Code / Cursor のタスク
 
-`~/Library/Application Support/Cursor/User/tasks.json`（VS Code なら `Code` 側）に置き、
-`workbench.action.tasks.runTask` へ `args: "cclinks"` でキーを割り当てる。
+設定は2ファイル。どちらもワークスペースではなくユーザー側に置く。フォルダを開いていない
+ウィンドウでもキーが効くようにするため。
+
+まずタスクを `~/Library/Application Support/Cursor/User/tasks.json`（VS Code なら `Cursor` の
+代わりに `Code`）に置く。
 
 ```jsonc
 {
@@ -132,6 +135,20 @@ alias ccl='cclinks'
 
 タスクのシェルは対話シェルの `PATH` を引き継がない。コマンドと `PATH` を明示しているのは
 そのため。
+
+次にキーを、隣の `keybindings.json` に。
+
+```jsonc
+{
+  "key": "alt+cmd+q",
+  "command": "workbench.action.tasks.runTask",
+  "args": "cclinks",
+  "when": "terminalFocus"
+}
+```
+
+`terminalFocus` はキーをターミナルに限定する。編集中はこのキーが空くということ。
+ウィンドウのどこからでも呼びたい場合は外す。
 
 ### Raycast
 
