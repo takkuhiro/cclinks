@@ -53,13 +53,13 @@ class TestMain:
         return calls
 
     def test_opens_the_selected_url(self, monkeypatch, opened):
-        monkeypatch.setattr(cli, "collect_links", lambda cwd: LINKS)
+        monkeypatch.setattr(cli, "collect_links", lambda cwd, active=False: LINKS)
         monkeypatch.setattr(cli, "choose", lambda lines: cli.format_line(LINKS[1]))
         assert cli.main([]) == 0
         assert opened == ["https://b.example/y"]
 
     def test_does_nothing_when_selection_cancelled(self, monkeypatch, opened):
-        monkeypatch.setattr(cli, "collect_links", lambda cwd: LINKS)
+        monkeypatch.setattr(cli, "collect_links", lambda cwd, active=False: LINKS)
         monkeypatch.setattr(cli, "choose", lambda lines: None)
         assert cli.main([]) == 0
         assert opened == []
@@ -72,14 +72,16 @@ class TestMain:
         """
         seen = {}
         monkeypatch.setattr(
-            cli, "collect_links", lambda cwd: seen.setdefault("cwd", cwd) and [] or LINKS
+            cli,
+            "collect_links",
+            lambda cwd, active=False: seen.setdefault("cwd", cwd) and [] or LINKS,
         )
         monkeypatch.setattr(cli, "choose", lambda lines: None)
         cli.main(["--latest"])
         assert seen["cwd"] is None
 
     def test_print_only_mode_lists_without_opening(self, monkeypatch, opened, capsys):
-        monkeypatch.setattr(cli, "collect_links", lambda cwd: LINKS)
+        monkeypatch.setattr(cli, "collect_links", lambda cwd, active=False: LINKS)
         assert cli.main(["--print"]) == 0
         out = capsys.readouterr().out
         assert "https://a.example/x" in out
@@ -101,7 +103,7 @@ class TestEmptySession:
 
     @pytest.fixture(autouse=True)
     def no_links(self, monkeypatch):
-        monkeypatch.setattr(cli, "collect_links", lambda cwd: [])
+        monkeypatch.setattr(cli, "collect_links", lambda cwd, active=False: [])
 
     @pytest.fixture
     def picker(self, monkeypatch):

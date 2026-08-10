@@ -88,9 +88,9 @@ def url_from_line(line: str) -> str | None:
     return candidate if candidate.startswith(("http://", "https://")) else None
 
 
-def collect_links(cwd: str | None) -> list[Link]:
+def collect_links(cwd: str | None, active: bool = False) -> list[Link]:
     """Links from the session for `cwd`, or from the newest session when it is None."""
-    return links_for_session(cwd)
+    return links_for_session(cwd, active=active)
 
 
 def choose(lines: list[str], header: str | None = None) -> str | None:
@@ -144,11 +144,20 @@ def main(argv: list[str] | None = None) -> int:
         help="ignore the working directory and use the most recent session",
     )
     parser.add_argument(
+        "--active",
+        action="store_true",
+        help="use the session you last typed into (requires the UserPromptSubmit hook)",
+    )
+    parser.add_argument(
         "--no-color", action="store_true", help="do not color the picker"
     )
     args = parser.parse_args(argv)
 
-    links = collect_links(None if args.latest else args.cwd)
+    # --active carries its own working directory in the record, and a hotkey's
+    # cwd is arbitrary, so neither mode should consult the process's own.
+    links = collect_links(
+        None if (args.latest or args.active) else args.cwd, active=args.active
+    )
 
     if args.print:
         if not links:

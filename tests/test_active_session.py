@@ -13,7 +13,7 @@ import pytest
 
 from cclinks import cli
 from cclinks.collect import links_for_session
-from cclinks.sources import claude_code
+from cclinks.sources import Source, claude_code
 from cclinks.sources.claude_code import active_transcript
 
 
@@ -94,14 +94,16 @@ class TestLinksForSession:
         links = links_for_session(None, active=True)
         assert [link.url for link in links] == ["https://a.example"]
 
-    def test_falls_back_when_there_is_no_record(self, tmp_path, monkeypatch):
+    def test_falls_back_when_there_is_no_record(self):
         """Without the hook, --active must still behave like --latest."""
-        monkeypatch.setattr(claude_code, "_active_file", lambda: tmp_path / "missing.json")
         called = {}
-        monkeypatch.setattr(
-            claude_code, "find_transcript", lambda cwd: called.setdefault("cwd", cwd)
+        unrecorded = Source(
+            name="test",
+            find_transcript=lambda cwd: called.setdefault("cwd", cwd),
+            message_texts=lambda path: [],
+            active_transcript=lambda: None,
         )
-        links_for_session(None, active=True)
+        links_for_session(None, source=unrecorded, active=True)
         assert "cwd" in called
 
 

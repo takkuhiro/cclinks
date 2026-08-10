@@ -33,7 +33,9 @@ class TestMissingFzfIsReported:
     def no_fzf(self, monkeypatch):
         monkeypatch.setattr(cli, "find_fzf", lambda: None)
         monkeypatch.setattr(
-            cli, "collect_links", lambda cwd: [cli.Link(url="https://a.example", label="A")]
+            cli,
+            "collect_links",
+            lambda cwd, active=False: [cli.Link(url="https://a.example", label="A")],
         )
 
     def test_exits_non_zero(self, no_fzf):

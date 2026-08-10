@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Optional
 
 __all__ = ["Source"]
 
@@ -16,3 +16,6 @@ class Source:
     find_transcript: Callable[[str | None], Path | None]
     # Message texts, newest first.
     message_texts: Callable[[Path], Iterable[str]]
+    # The session the user last typed into, when the source can tell. None when
+    # it cannot, or when nothing has been recorded yet.
+    active_transcript: Optional[Callable[[], Path | None]] = None

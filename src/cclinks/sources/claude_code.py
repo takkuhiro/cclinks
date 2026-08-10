@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from .base import Source
@@ -11,11 +12,13 @@ __all__ = [
     "message_texts",
     "transcript_for_cwd",
     "latest_transcript",
+    "active_transcript",
     "find_transcript",
     "SOURCE",
 ]
 
 _DEFAULT_PROJECTS = Path.home() / ".claude" / "projects"
+_DEFAULT_ACTIVE_FILE = Path.home() / ".claude" / "cclinks-active.json"
 
 
 def _text_of(message) -> str:
@@ -100,6 +103,43 @@ def transcript_for_cwd(
     return latest_transcript(projects_dir) if fallback else None
 
 
+def _active_file() -> Path:
+    override = os.environ.get("CCLINKS_ACTIVE_FILE")
+    return Path(override) if override else _DEFAULT_ACTIVE_FILE
+
+
+def active_transcript(
+    active_file: Path | str | None = None, projects_dir: Path | str | None = None
+) -> Path | None:
+    """The transcript of the session the user last typed into.
+
+    A picker launched from a hotkey is not a child of Claude Code, so it cannot
+    read CLAUDE_CODE_SESSION_ID. The session announces itself through a
+    UserPromptSubmit hook instead, which writes the record this reads.
+
+    This exists because mtime is the wrong signal: the newest transcript belongs
+    to whichever session wrote last, which may be another tab working through a
+    long task while the user watches this one. None when no record is readable,
+    leaving the caller to fall back.
+    """
+    path = Path(active_file) if active_file is not None else _active_file()
+    try:
+        recorded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(recorded, dict):
+        return None
+
+    transcript = recorded.get("transcript_path")
+    if transcript and Path(transcript).is_file():
+        return Path(transcript)
+
+    # The transcript named in the record is gone; the directory it belonged to
+    # is still the best answer available.
+    cwd = recorded.get("cwd")
+    return transcript_for_cwd(cwd, projects_dir) if cwd else None
+
+
 def find_transcript(cwd: str | None) -> Path | None:
     if cwd is None:
         return latest_transcript()
@@ -110,4 +150,5 @@ SOURCE = Source(
     name="claude-code",
     find_transcript=find_transcript,
     message_texts=message_texts,
+    active_transcript=active_transcript,
 )
