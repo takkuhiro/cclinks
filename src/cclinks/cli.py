@@ -28,6 +28,8 @@ __all__ = [
 
 _SEPARATOR = "  ⟶  "
 
+_EMPTY_MESSAGE = "No links found in this session"
+
 _RESET = "\x1b[0m"
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 # Cyan label, dim grey URL: the label leads, the URL confirms.
@@ -91,18 +93,25 @@ def collect_links(cwd: str | None) -> list[Link]:
     return links_for_session(cwd)
 
 
-def choose(lines: list[str]) -> str | None:
-    """Let fzf pick a row. None when nothing was chosen."""
+def choose(lines: list[str], header: str | None = None) -> str | None:
+    """Let fzf pick a row. None when nothing was chosen.
+
+    `header` puts a line above the list. It is how an empty list says why it is
+    empty, instead of the picker appearing to have nothing to show.
+    """
+    argv = [
+        find_fzf() or "fzf",
+        "--ansi",
+        "--prompt=link> ",
+        "--height=40%",
+        "--reverse",
+        "--no-multi",
+    ]
+    if header:
+        argv += ["--header", header]
     try:
         completed = subprocess.run(
-            [
-                find_fzf() or "fzf",
-                "--ansi",
-                "--prompt=link> ",
-                "--height=40%",
-                "--reverse",
-                "--no-multi",
-            ],
+            argv,
             input="\n".join(lines),
             capture_output=True,
             text=True,
@@ -140,23 +149,32 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     links = collect_links(None if args.latest else args.cwd)
-    if not links:
-        print("No links found in this session", file=sys.stderr)
-        return 1
 
     if args.print:
+        if not links:
+            # Scripts read this mode, where "nothing found" is worth signalling.
+            print(_EMPTY_MESSAGE, file=sys.stderr)
+            return 1
         # Plain, so the output stays usable in a pipe.
         print("\n".join(format_line(link) for link in links))
         return 0
 
     if find_fzf() is None:
         # Exiting quietly here would look like the picker simply flashed and vanished.
-        print("\n".join(format_line(link) for link in links))
+        if links:
+            print("\n".join(format_line(link) for link in links))
         print(
             "fzf not found. Install it (brew install fzf) or check your PATH.",
             file=sys.stderr,
         )
         return 2
+
+    if not links:
+        # An empty session is an outcome, not a failure. Exiting non-zero made
+        # VS Code call the run a launch failure and leave the tab open with no
+        # process to interrupt. Show the picker empty and let Esc close it.
+        choose([], header=_EMPTY_MESSAGE)
+        return 0
 
     selected = choose([format_line(link, color=not args.no_color) for link in links])
     if selected is None:
