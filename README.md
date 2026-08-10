@@ -57,6 +57,7 @@ pipx install git+https://github.com/takkuhiro/cclinks
 ```sh
 cclinks              # pick a link and open it
 cclinks --print      # list links, open nothing
+cclinks --active     # use the session you last typed into (needs a hook, below)
 cclinks --latest     # ignore the working directory, use the newest session
 cclinks --cwd PATH   # target the session for a specific directory
 cclinks --no-color   # do not color the picker
@@ -84,10 +85,51 @@ By default it looks for the session belonging to the current working directory, 
 back to the most recently updated session if there is none. `--latest` skips the lookup
 entirely — use it when launching from a hotkey, where the working directory is arbitrary.
 
+Both can land on the wrong session once you keep more than one open. A picker started from
+a hotkey is a *sibling* of Claude Code, not a child, so `CLAUDE_CODE_SESSION_ID` never
+reaches it, and several sessions routinely share a working directory. Modification time is
+a poor tiebreak too: a tab working through a long task writes continuously, so it wins on
+mtime while you are reading a different one.
+
+`--active` uses the session you last typed into, which is a much closer match for the tab
+in front of you. The session has to announce itself, which is what the hook below does.
+
+#### The hook
+
+`contrib/user-prompt-submit-hook.sh` records the session on every prompt you submit. It
+needs [jq](https://jqlang.github.io/jq/). Copy it somewhere, `chmod +x` it, then add this
+to `~/.claude/settings.json`:
+
+```jsonc
+"hooks": {
+  "UserPromptSubmit": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash /path/to/user-prompt-submit-hook.sh",
+          "timeout": 5
+        }
+      ]
+    }
+  ]
+}
+```
+
+It writes `~/.claude/cclinks-active.json` — the session id, its transcript path, and its
+working directory. Not the prompt itself. Override the location with
+`CCLINKS_ACTIVE_FILE`.
+
+Without the hook, `--active` behaves exactly like `--latest`, so you can put it in a
+keybinding first and set the hook up afterwards.
+
 ## Binding it to a key
 
 Claude Code occupies the terminal, so the picker has to run somewhere else. Pick whichever
 fits your setup.
+
+The examples below use `--latest`, which needs no setup. Swap it for `--active` once the
+hook is in place.
 
 ### tmux
 

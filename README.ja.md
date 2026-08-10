@@ -55,6 +55,7 @@ pipx install git+https://github.com/takkuhiro/cclinks
 ```sh
 cclinks              # リンクを選んで開く
 cclinks --print      # 開かずに一覧を出す
+cclinks --active     # 最後に入力したセッションを使う（下記の hook が必要）
 cclinks --latest     # 作業ディレクトリを見ず、最新のセッションを使う
 cclinks --cwd PATH   # 指定したディレクトリのセッションを対象にする
 cclinks --no-color   # 色を付けない
@@ -82,10 +83,48 @@ cclinks --no-color
 落とす。`--latest` は探索自体を省く。ホットキーから起動する場合は作業ディレクトリが
 当てにならないため、こちらを使う。
 
+ただしセッションを複数開くと、どちらも別のセッションを掴むことがある。ホットキーから起動した
+選択画面は Claude Code の子ではなく*兄弟*のプロセスなので `CLAUDE_CODE_SESSION_ID` が届かず、
+また同じ作業ディレクトリを複数のセッションが共有することも珍しくない。更新時刻も当てにならない。
+裏で長いタスクを回しているタブは書き込みが続くため、こちらが読んでいる間に最新を奪ってしまう。
+
+`--active` は最後に入力したセッションを使う。目の前のタブにずっと近い。
+そのためにセッション自身に名乗らせるのが、次の hook。
+
+#### hook
+
+`contrib/user-prompt-submit-hook.sh` が、プロンプトを送るたびにセッションを記録する。
+[jq](https://jqlang.github.io/jq/) が必要。好きな場所に置いて `chmod +x` し、
+`~/.claude/settings.json` に次を加える。
+
+```jsonc
+"hooks": {
+  "UserPromptSubmit": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash /path/to/user-prompt-submit-hook.sh",
+          "timeout": 5
+        }
+      ]
+    }
+  ]
+}
+```
+
+記録先は `~/.claude/cclinks-active.json`。セッション ID、トランスクリプトのパス、作業
+ディレクトリだけで、プロンプト本文は含まない。場所は `CCLINKS_ACTIVE_FILE` で変えられる。
+
+hook が無い場合、`--active` は `--latest` と同じ挙動になる。先にキーへ割り当てておいて、
+後から hook を用意しても構わない。
+
 ## キーへの割り当て
 
 Claude Code がターミナルを占有しているので、選択画面は別の場所で動かす必要がある。
 環境に合うものを選ぶ。
+
+以下の例は準備の要らない `--latest` で書いてある。hook を入れたら `--active` に変えるとよい。
 
 ### tmux
 
