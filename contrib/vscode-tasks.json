@@ -19,7 +19,7 @@
     {
       "label": "cclinks",
       "type": "shell",
-      "command": "${userHome}/.local/bin/cclinks --latest",
+      "command": "${userHome}/.local/bin/cclinks",
       "options": {
         "env": {
           "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${env:PATH}"

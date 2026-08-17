@@ -242,6 +242,23 @@ class TestOriginColumnAppears:
         self.collecting(monkeypatch, MIXED)
         cli.main([])
         assert "2 sessions" in picker["header"]
+        assert "2 links" in picker["header"]
+
+    def test_header_says_how_far_back_it_looked(self, monkeypatch, picker):
+        self.collecting(monkeypatch, MIXED)
+        cli.main([])
+        assert "last 7d" in picker["header"]
+
+    def test_header_admits_when_the_cap_was_reached(self, monkeypatch, picker):
+        """Two sessions read out of a cap of two: there may well be more behind it."""
+        self.collecting(monkeypatch, MIXED)
+        cli.main(["--limit", "2"])
+        assert "--all" in picker["header"]
+
+    def test_no_such_admission_below_the_cap(self, monkeypatch, picker):
+        self.collecting(monkeypatch, MIXED)
+        cli.main(["--limit", "9"])
+        assert "--all" not in picker["header"]
 
     def test_no_header_within_one_session(self, monkeypatch, picker):
         self.collecting(monkeypatch, ITEMS)

@@ -254,6 +254,12 @@ _WHERE = {
     "all": "every project",
 }
 
+_NOWHERE = {
+    "session": "in this session",
+    "project": "in this project",
+    "all": "in any project",
+}
+
 
 def _window(limit: int, since: str | None) -> str | None:
     """How far back the list reaches, or None when it reaches everywhere."""
@@ -266,16 +272,24 @@ def _window(limit: int, since: str | None) -> str | None:
 
 
 def _header(items, scope: str, limit: int, since: str | None) -> str:
+    """What the list covers, above a list that spans more than one session.
+
+    The counts are of what is actually shown. The cap is mentioned only once it
+    has bitten, where it stops being trivia and starts being the reason
+    something is missing.
+    """
     sessions = len({item.session.session_id for item in items})
-    parts = [_WHERE[scope], f"{sessions} sessions", f"{len(items)} links"]
-    window = _window(limit, since)
-    if window:
-        parts.insert(1, window)
+    parts = [_WHERE[scope]]
+    if since is not None:
+        parts.append(f"last {since}")
+    parts += [f"{sessions} sessions", f"{len(items)} links"]
+    if 0 < limit <= sessions:
+        parts.append("more with --all")
     return " · ".join(parts)
 
 
 def _empty_message(scope: str, limit: int, since: str | None) -> str:
-    message = f"No links found in {_WHERE[scope]}"
+    message = f"No links found {_NOWHERE[scope]}"
     window = _window(limit, since)
     if window is None:
         return message

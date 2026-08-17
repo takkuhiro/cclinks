@@ -1,4 +1,4 @@
-"""Open links from a Claude Code session."""
+"""Open links from your Claude Code sessions."""
 
 from importlib.metadata import PackageNotFoundError, version
 
