@@ -153,11 +153,6 @@ def _by_mtime(paths) -> list[Path]:
     return sorted(paths, key=_mtime, reverse=True)
 
 
-def _newest(paths) -> Path | None:
-    found = _by_mtime(paths)
-    return found[0] if found else None
-
-
 def _projects_root(projects_dir: Path | str | None) -> Path:
     return Path(projects_dir) if projects_dir is not None else _DEFAULT_PROJECTS
 
@@ -194,10 +189,8 @@ def list_transcripts(cwd: str | None, scope: str = "all") -> list[Path]:
 
 def latest_transcript(projects_dir: Path | str | None = None) -> Path | None:
     """The most recently updated transcript, whatever the project."""
-    root = _projects_root(projects_dir)
-    if not root.is_dir():
-        return None
-    return _newest(root.glob("*/*.jsonl"))
+    found = all_transcripts(projects_dir)
+    return found[0] if found else None
 
 
 def transcript_for_cwd(
@@ -208,13 +201,9 @@ def transcript_for_cwd(
     With `fallback`, fall back to the most recent session anywhere, which is what
     you want when the working directory is arbitrary.
     """
-    directory = _projects_root(projects_dir) / _encoded(cwd)
-
-    if directory.is_dir():
-        exact = _newest(directory.glob("*.jsonl"))
-        if exact is not None:
-            return exact
-
+    found = transcripts_for_cwd(cwd, projects_dir)
+    if found:
+        return found[0]
     return latest_transcript(projects_dir) if fallback else None
 
 

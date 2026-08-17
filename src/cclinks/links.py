@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-__all__ = ["Link", "extract_links", "merge_links"]
+__all__ = ["Link", "extract_links", "merge_links", "improves_label"]
 
 
 @dataclass(frozen=True)
@@ -54,12 +54,22 @@ def _clean(url: str) -> str:
     return url
 
 
+def improves_label(stored: Link, incoming: Link) -> bool:
+    """Whether `incoming` names a URL that `stored` only mentions bare.
+
+    Pasted command output repeats URLs without labels, so a link seen twice
+    keeps its first position but takes the better of the two labels. Anything
+    deduplicating links needs this rule, which is why it lives here rather than
+    inside one of them.
+    """
+    return stored.label == stored.url and incoming.label != incoming.url
+
+
 def merge_links(existing: list[Link], incoming) -> None:
     """Append links to `existing`, in place, skipping duplicates.
 
-    A URL keeps the position of its first occurrence. A later occurrence only
-    matters when it carries a label and the stored one does not: pasted command
-    output can mention a URL bare, and that must not erase the label.
+    A URL keeps the position of its first occurrence, and only a better label
+    changes what is stored there.
     """
     index = {link.url: position for position, link in enumerate(existing)}
     for link in incoming:
@@ -68,8 +78,7 @@ def merge_links(existing: list[Link], incoming) -> None:
             index[link.url] = len(existing)
             existing.append(link)
             continue
-        stored = existing[position]
-        if stored.label == stored.url and link.label != link.url:
+        if improves_label(existing[position], link):
             existing[position] = link
 
 

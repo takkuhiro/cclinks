@@ -21,6 +21,7 @@ __all__ = [
     "main",
     "format_line",
     "format_row",
+    "format_rows",
     "picker_lines",
     "index_from_line",
     "parse_duration",
@@ -96,13 +97,17 @@ def _sgr(code: str) -> str:
     return f"\x1b[{code}m"
 
 
+def _char_width(char: str) -> int:
+    return 2 if unicodedata.east_asian_width(char) in "WF" else 1
+
+
 def _display_width(text: str) -> int:
     """Columns a string takes in a terminal.
 
     Japanese titles are the reason: len() counts a full-width character once and
     the column would be laid out too narrow to line up.
     """
-    return sum(2 if unicodedata.east_asian_width(char) in "WF" else 1 for char in text)
+    return sum(_char_width(char) for char in text)
 
 
 def _fit(text: str, width: int) -> str:
@@ -111,11 +116,10 @@ def _fit(text: str, width: int) -> str:
         kept = ""
         remaining = width - 1  # room for the ellipsis
         for char in text:
-            size = 2 if unicodedata.east_asian_width(char) in "WF" else 1
-            if remaining - size < 0:
+            remaining -= _char_width(char)
+            if remaining < 0:
                 break
             kept += char
-            remaining -= size
         text = kept + "…"
     return text + " " * (width - _display_width(text))
 
@@ -179,11 +183,25 @@ def origin_width(items) -> int:
     return min(max(widths, default=0), _origin_max())
 
 
-def picker_lines(items, color: bool = False, show_origin: bool = False) -> list[str]:
-    width = origin_width(items) if show_origin else 0
+def spans_sessions(items) -> bool:
+    """Whether these links come from more than one session.
+
+    The one thing that decides whether the origin is worth a column: naming the
+    same session on every row says nothing.
+    """
+    return len({item.session.session_id for item in items}) > 1
+
+
+def format_rows(items, color: bool = False) -> list[str]:
+    """Every link as a row, with the origin column iff it distinguishes anything."""
+    width = origin_width(items) if spans_sessions(items) else 0
+    return [format_row(item, color=color, origin_width=width) for item in items]
+
+
+def picker_lines(items, color: bool = False) -> list[str]:
     return [
-        f"{position}{_INDEX_SEPARATOR}{format_row(item, color=color, origin_width=width)}"
-        for position, item in enumerate(items)
+        f"{position}{_INDEX_SEPARATOR}{row}"
+        for position, row in enumerate(format_rows(items, color=color))
     ]
 
 
@@ -365,22 +383,19 @@ def main(argv: list[str] | None = None) -> int:
         active=args.active,
     )
 
-    show_origin = len({item.session.session_id for item in items}) > 1
-    width = origin_width(items) if show_origin else 0
-
     if args.print:
         if not items:
             # Scripts read this mode, where "nothing found" is worth signalling.
             print(_empty_message(scope, limit, since_text), file=sys.stderr)
             return 1
         # Plain, so the output stays usable in a pipe.
-        print("\n".join(format_row(item, origin_width=width) for item in items))
+        print("\n".join(format_rows(items)))
         return 0
 
     if find_fzf() is None:
         # Exiting quietly here would look like the picker simply flashed and vanished.
         if items:
-            print("\n".join(format_row(item, origin_width=width) for item in items))
+            print("\n".join(format_rows(items)))
         print(
             "fzf not found. Install it (brew install fzf) or check your PATH.",
             file=sys.stderr,
@@ -394,10 +409,9 @@ def main(argv: list[str] | None = None) -> int:
         choose([], header=_empty_message(scope, limit, since_text))
         return 0
 
-    lines = picker_lines(items, color=not args.no_color, show_origin=show_origin)
     selected = choose(
-        lines,
-        header=_header(items, scope, limit, since_text) if show_origin else None,
+        picker_lines(items, color=not args.no_color),
+        header=_header(items, scope, limit, since_text) if spans_sessions(items) else None,
     )
     if selected is None:
         return 0

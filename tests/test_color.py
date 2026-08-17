@@ -85,5 +85,5 @@ class TestRowRecovery:
             SourcedLink(link=LABELLED, session=SessionInfo(session_id="s1", project="a")),
             SourcedLink(link=BARE, session=SessionInfo(session_id="s2", project="b")),
         ]
-        lines = cli.picker_lines(items, color=color, show_origin=True)
+        lines = cli.picker_lines(items, color=color)
         assert [cli.index_from_line(line) for line in lines] == [0, 1]

@@ -12,10 +12,10 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from .links import Link, extract_links, merge_links
+from .links import Link, extract_links, improves_label, merge_links
 from .sources import SessionInfo, Source, get
 
-__all__ = ["SourcedLink", "links_from_texts", "links_for_session", "sourced_links"]
+__all__ = ["SourcedLink", "links_from_texts", "sourced_links"]
 
 
 @dataclass(frozen=True)
@@ -32,19 +32,13 @@ def links_from_texts(texts) -> list[Link]:
     return result
 
 
-def links_for_session(
-    cwd: str | None, source: Source | None = None, active: bool = False
-) -> list[Link]:
-    """Links from the session for `cwd`, or from the newest one when cwd is None.
+def _transcripts(source: Source, cwd: str | None, scope: str, active: bool) -> list:
+    """The transcripts to read, newest first.
 
-    With `active`, prefer the session the user last typed into. That record only
+    `active` narrows to the session the user last typed into. That record only
     exists once the hook is installed, so an unrecorded session falls through to
     the usual lookup rather than coming back empty.
     """
-    return [item.link for item in sourced_links(cwd, source, scope="session", active=active)]
-
-
-def _transcripts(source: Source, cwd: str | None, scope: str, active: bool) -> list:
     if active and source.active_transcript is not None:
         recorded = source.active_transcript()
         if recorded is not None:
@@ -106,6 +100,6 @@ def sourced_links(
                 result.append(SourcedLink(link=link, session=info))
                 continue
             stored = result[position]
-            if stored.link.label == stored.link.url and link.label != link.url:
+            if improves_label(stored.link, link):
                 result[position] = SourcedLink(link=link, session=stored.session)
     return result

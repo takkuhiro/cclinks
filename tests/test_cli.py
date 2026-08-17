@@ -104,13 +104,16 @@ class TestPickerLines:
     """fzf hands the chosen line back verbatim; the row is found by index, not by parsing."""
 
     def test_a_row_is_recoverable_from_the_chosen_line(self):
-        lines = cli.picker_lines(MIXED, show_origin=True)
+        lines = cli.picker_lines(MIXED)
         for position, line in enumerate(lines):
             assert cli.index_from_line(line) == position
 
-    def test_origin_is_omitted_when_asked(self):
-        line = cli.picker_lines(ITEMS, show_origin=False)[0]
+    def test_origin_is_omitted_within_one_session(self):
+        line = cli.picker_lines(ITEMS)[0]
         assert "cclinks" not in line
+
+    def test_origin_is_shown_across_sessions(self):
+        assert "cclinks" in cli.picker_lines(MIXED)[0]
 
     def test_unparsable_line_returns_none(self):
         assert cli.index_from_line("just some text") is None

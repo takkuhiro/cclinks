@@ -2,7 +2,7 @@
 
 from dataclasses import replace
 
-from cclinks.collect import links_for_session, links_from_texts, sourced_links
+from cclinks.collect import links_from_texts, sourced_links
 from cclinks.sources.base import SessionInfo, Source
 
 
@@ -47,14 +47,17 @@ def fake_source(transcript, texts):
     )
 
 
-class TestLinksForSession:
+class TestOneSession:
+    """`--scope session` and friends: the source is asked for a single transcript."""
+
     def test_reads_through_the_source(self):
         source = fake_source("/some/transcript.jsonl", ["[A](https://a.example)"])
-        assert [link.url for link in links_for_session(None, source)] == ["https://a.example"]
+        found = sourced_links(None, source, scope="session")
+        assert [item.link.url for item in found] == ["https://a.example"]
 
     def test_no_transcript_means_no_links(self):
         source = fake_source(None, ["[A](https://a.example)"])
-        assert links_for_session(None, source) == []
+        assert sourced_links(None, source, scope="session") == []
 
     def test_cwd_is_handed_to_the_source(self):
         seen = {}
@@ -64,7 +67,7 @@ class TestLinksForSession:
             find_transcript=lambda cwd: seen.setdefault("cwd", cwd) or None,
             message_texts=lambda path: [],
         )
-        links_for_session("/here", source)
+        sourced_links("/here", source, scope="session")
         assert seen["cwd"] == "/here"
 
 

@@ -12,7 +12,7 @@ import json
 import pytest
 
 from cclinks import cli
-from cclinks.collect import links_for_session
+from cclinks.collect import sourced_links
 from cclinks.sources import Source, claude_code
 from cclinks.sources.claude_code import active_transcript
 
@@ -72,7 +72,7 @@ class TestActiveTranscript:
         assert active_transcript(active_file=active, projects_dir=tmp_path) is None
 
 
-class TestLinksForSession:
+class TestReadingTheActiveSession:
     def test_active_record_is_used_when_asked(self, tmp_path, monkeypatch):
         transcript = tmp_path / "mine.jsonl"
         transcript.write_text(
@@ -91,8 +91,8 @@ class TestLinksForSession:
         active = record(tmp_path / "active.json", transcript_path=str(transcript))
         monkeypatch.setattr(claude_code, "_active_file", lambda: active)
 
-        links = links_for_session(None, active=True)
-        assert [link.url for link in links] == ["https://a.example"]
+        found = sourced_links(None, active=True)
+        assert [item.link.url for item in found] == ["https://a.example"]
 
     def test_falls_back_when_there_is_no_record(self):
         """Without the hook, --active must still behave like --latest."""
@@ -103,7 +103,7 @@ class TestLinksForSession:
             message_texts=lambda path: [],
             active_transcript=lambda: None,
         )
-        links_for_session(None, source=unrecorded, active=True)
+        sourced_links(None, unrecorded, active=True)
         assert "cwd" in called
 
 
