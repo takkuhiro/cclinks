@@ -48,8 +48,10 @@ class TestFormat:
         assert row.index("cclinks") < row.index("記事A")
 
     def test_origin_column_is_padded_to_a_common_width(self):
+        """Titles are mostly Japanese: the column lines up by printed width, not len()."""
         rows = [cli.format_row(item, origin_width=24) for item in MIXED]
-        assert len({row.index(cli._SEPARATOR) for row in rows}) == 1
+        widths = {cli._display_width(row.split(cli._ORIGIN_SEPARATOR)[0]) for row in rows}
+        assert widths == {24}
 
     def test_a_long_origin_is_truncated_to_the_column(self):
         wordy = SessionInfo(session_id="c1", project="p", title="と" * 40)
@@ -61,6 +63,31 @@ class TestFormat:
         plain = cli.format_row(ITEMS[0], origin_width=20)
         colored = cli.format_row(ITEMS[0], color=True, origin_width=20)
         assert cli._ANSI.sub("", colored) == plain
+
+
+class TestOriginWidth:
+    """The column is as wide as it needs to be, up to a cap that leaves the label room."""
+
+    def test_the_widest_origin_sets_the_column(self):
+        assert cli.origin_width(MIXED) == cli._display_width(OTHER.label)
+
+    def test_a_very_long_title_is_capped(self):
+        wordy = SessionInfo(session_id="c1", project="p", title="と" * 40)
+        assert cli.origin_width([SourcedLink(link=LINKS[0], session=wordy)]) == cli._ORIGIN_MAX
+
+    def test_the_cap_comes_from_the_environment(self, monkeypatch):
+        """Japanese titles lose a lot to a 32-column cap; the terminal may have room."""
+        monkeypatch.setenv("CCLINKS_ORIGIN_WIDTH", "48")
+        wordy = SessionInfo(session_id="c1", project="p", title="と" * 40)
+        assert cli.origin_width([SourcedLink(link=LINKS[0], session=wordy)]) == 48
+
+    def test_a_nonsense_cap_is_ignored(self, monkeypatch):
+        monkeypatch.setenv("CCLINKS_ORIGIN_WIDTH", "wide please")
+        wordy = SessionInfo(session_id="c1", project="p", title="と" * 40)
+        assert cli.origin_width([SourcedLink(link=LINKS[0], session=wordy)]) == cli._ORIGIN_MAX
+
+    def test_no_rows_no_column(self):
+        assert cli.origin_width([]) == 0
 
 
 class TestDisplayWidth:
