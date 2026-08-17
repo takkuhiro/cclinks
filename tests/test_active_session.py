@@ -112,9 +112,9 @@ class TestCliActiveFlag:
     def collector(self, monkeypatch):
         seen = {}
 
-        def fake_collect(cwd, active=False):
+        def fake_collect(cwd, **kwargs):
             seen["cwd"] = cwd
-            seen["active"] = active
+            seen.update(kwargs)
             return []
 
         monkeypatch.setattr(cli, "collect_links", fake_collect)
@@ -130,6 +130,11 @@ class TestCliActiveFlag:
         """The hotkey's working directory is arbitrary; the record is authoritative."""
         cli.main(["--active"])
         assert collector["cwd"] is None
+
+    def test_active_reads_one_session_only(self, collector):
+        """The record names a session; widening past it would defeat the point."""
+        cli.main(["--active"])
+        assert collector["scope"] == "session"
 
     def test_default_does_not_request_it(self, collector):
         cli.main([])

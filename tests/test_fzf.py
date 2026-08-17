@@ -7,6 +7,9 @@ bin. Exiting quietly when fzf is missing hides the cause, so it must be reported
 import pytest
 
 from cclinks import cli
+from cclinks.collect import SourcedLink
+from cclinks.links import Link
+from cclinks.sources.base import SessionInfo
 
 
 class TestFindFzf:
@@ -32,11 +35,11 @@ class TestMissingFzfIsReported:
     @pytest.fixture
     def no_fzf(self, monkeypatch):
         monkeypatch.setattr(cli, "find_fzf", lambda: None)
-        monkeypatch.setattr(
-            cli,
-            "collect_links",
-            lambda cwd, active=False: [cli.Link(url="https://a.example", label="A")],
+        item = SourcedLink(
+            link=Link(url="https://a.example", label="A"),
+            session=SessionInfo(session_id="s1", project="p"),
         )
+        monkeypatch.setattr(cli, "collect_links", lambda cwd, **kwargs: [item])
 
     def test_exits_non_zero(self, no_fzf):
         assert cli.main([]) == 2
