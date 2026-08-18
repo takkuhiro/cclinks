@@ -1,6 +1,6 @@
 # cclinks
 
-[English](README.md) | **日本語**
+[English](https://github.com/takkuhiro/cclinks/blob/main/README.md) | **日本語**
 
 Claude Code のセッションに出てきたリンクを、マウスを使わずキーボードで開く。
 
@@ -11,10 +11,11 @@ VS Code の *Open Detected Link*）はどれも見つけられない。画面上
 `cclinks` は代わりにセッションのトランスクリプトを読む。そこには URL が残っている。
 プロジェクトやタブをまたいで集め、それぞれの行がどのセッション由来かを添える。
 
-![cclinks in action](docs/demo.gif)
+![cclinks in action](https://raw.githubusercontent.com/takkuhiro/cclinks/main/docs/demo.gif)
 
-ポップアップの背後にある `Sources:` が、Claude Code が実際に描画したもの。ラベルだけで、
-URL は1つも無い。選択画面にはその11件すべてが並ぶ。
+ポップアップの背後にある `Sources:` が、Claude Code が実際に描画したもの。ラベル20個だけで、
+URL は1つも無い。選択画面にはその全部に加えて、別の2プロジェクトのリンクも並び、各行の先頭が
+その出自を示す。`example` と打つだけで、2つのプロジェクトにまたがって候補が絞り込まれる。
 
 矢印キーか入力で絞り込み、Enter でブラウザが開く。
 
@@ -42,14 +43,17 @@ Cursor の統合ターミナル）。この場合も URL はバッファには�
 Python 3.10 以上と [fzf](https://github.com/junegunn/fzf) が必要。
 
 ```sh
-uv tool install git+https://github.com/takkuhiro/cclinks
+uv tool install cclinks
 ```
 
 pipx の場合:
 
 ```sh
-pipx install git+https://github.com/takkuhiro/cclinks
+pipx install cclinks
 ```
+
+リリースではなく最新のコミットを入れたい場合はリポジトリから:
+`uv tool install git+https://github.com/takkuhiro/cclinks`
 
 ## 使い方
 

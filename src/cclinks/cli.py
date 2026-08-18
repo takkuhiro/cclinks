@@ -235,9 +235,15 @@ def choose(lines: list[str], header: str | None = None) -> str | None:
         find_fzf() or "fzf",
         "--ansi",
         "--prompt=link> ",
-        "--height=40%",
+        # No --height: a popup or a dedicated tab is already sized for the
+        # picker, and asking for a fraction of it left the rest of the window
+        # blank -- space the URLs could have used. Run inline in a shell, fzf
+        # takes the screen and hands it back on exit.
         "--reverse",
         "--no-multi",
+        # A match deep in a URL would otherwise scroll that row sideways, and a
+        # row that slides left no longer lines up with the columns beside it.
+        "--no-hscroll",
         f"--delimiter={_INDEX_SEPARATOR}",
         # Hide the bookkeeping field from the list and from the search.
         "--with-nth=2..",
