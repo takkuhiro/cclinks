@@ -188,7 +188,7 @@ front of you.
 Needs tmux 3.2 or newer for `display-popup`.
 
 ```tmux
-bind-key u display-popup -E -w 80% -h 60% "cclinks"
+bind-key u display-popup -E -w 90% -h 70% "cclinks"
 ```
 
 The popup does not source your shell rc, so it uses the PATH the tmux server
