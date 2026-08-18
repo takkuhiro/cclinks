@@ -1,6 +1,6 @@
 # cclinks
 
-**English** | [日本語](README.ja.md)
+**English** | [日本語](https://github.com/takkuhiro/cclinks/blob/main/README.ja.md)
 
 Open links from your Claude Code sessions with the keyboard, without touching the mouse.
 
@@ -11,7 +11,7 @@ VS Code's *Open Detected Link* — cannot find it. There is nothing on screen to
 `cclinks` reads the session transcripts instead, where the URLs are still intact — across
 every project and every tab, with each row saying which session it came from.
 
-![cclinks in action](docs/demo.gif)
+![cclinks in action](https://raw.githubusercontent.com/takkuhiro/cclinks/main/docs/demo.gif)
 
 The `Sources:` list behind the popup is what Claude Code actually printed: labels, and not
 one URL among them. The picker has all eleven.
@@ -44,14 +44,17 @@ The two complement each other; bind them to neighbouring keys.
 Requires Python 3.10+ and [fzf](https://github.com/junegunn/fzf).
 
 ```sh
-uv tool install git+https://github.com/takkuhiro/cclinks
+uv tool install cclinks
 ```
 
 Or with pipx:
 
 ```sh
-pipx install git+https://github.com/takkuhiro/cclinks
+pipx install cclinks
 ```
+
+For the latest commit rather than the latest release, install from the repository
+instead: `uv tool install git+https://github.com/takkuhiro/cclinks`.
 
 ## Usage
 

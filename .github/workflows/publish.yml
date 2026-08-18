@@ -1,0 +1,47 @@
+# Publish to PyPI when a version tag is pushed.
+#
+# Authentication is PyPI's Trusted Publishing (OIDC), so there is no API token to
+# store or rotate. It has to be configured once on PyPI, against this exact
+# repository, workflow file name and environment:
+#
+#   owner takkuhiro / repository cclinks / workflow publish.yml / environment pypi
+name: publish
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  # A tag that fails its own test suite must not reach PyPI, where a version
+  # number can never be reused.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync
+      - run: uv run pytest -q
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # the OIDC token Trusted Publishing exchanges for an upload
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv build
+      # The tag is what names the release; a wheel built from a different version
+      # would be published under a number nobody asked for.
+      - name: Check the tag matches the built version
+        run: |
+          built=$(ls dist/*.whl | sed -E 's/.*cclinks-(.*)-py3.*/\1/')
+          tag=${GITHUB_REF_NAME#v}
+          echo "tag=$tag built=$built"
+          [ "$tag" = "$built" ]
+      - uses: pypa/gh-action-pypi-publish@release/v1
