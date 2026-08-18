@@ -13,8 +13,10 @@ every project and every tab, with each row saying which session it came from.
 
 ![cclinks in action](https://raw.githubusercontent.com/takkuhiro/cclinks/main/docs/demo.gif)
 
-The `Sources:` list behind the popup is what Claude Code actually printed: labels, and not
-one URL among them. The picker has all eleven.
+The `Sources:` list behind the popup is what Claude Code actually printed: twenty labels,
+and not one URL among them. The picker has every one of those, plus the links from two
+other projects — and each row says which session it came from. One query, `example`, pulls
+matches out of two of them at once.
 
 Pick with the arrow keys or by typing, press Enter, and the link opens in your browser.
 
