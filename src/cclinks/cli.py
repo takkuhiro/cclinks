@@ -235,7 +235,10 @@ def choose(lines: list[str], header: str | None = None) -> str | None:
         find_fzf() or "fzf",
         "--ansi",
         "--prompt=link> ",
-        "--height=40%",
+        # No --height: a popup or a dedicated tab is already sized for the
+        # picker, and asking for a fraction of it left the rest of the window
+        # blank -- space the URLs could have used. Run inline in a shell, fzf
+        # takes the screen and hands it back on exit.
         "--reverse",
         "--no-multi",
         f"--delimiter={_INDEX_SEPARATOR}",

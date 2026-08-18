@@ -367,6 +367,15 @@ class TestChoose:
         cli.choose(["0\thttps://a.example"])
         assert "--header" not in fzf_argv["argv"]
 
+    def test_the_picker_fills_the_window_it_was_given(self, fzf_argv):
+        """A popup or a dedicated tab is already sized for the picker.
+
+        Asking fzf for a fraction of it left most of the window blank, which is
+        space the URLs could have used.
+        """
+        cli.choose(["0\thttps://a.example"])
+        assert not any(argument.startswith("--height") for argument in fzf_argv["argv"])
+
     def test_the_index_field_is_hidden(self, fzf_argv):
         """The index is bookkeeping: it must not be shown, nor searched."""
         cli.choose(["0\thttps://a.example"])
