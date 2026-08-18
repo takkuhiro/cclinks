@@ -182,7 +182,7 @@ Claude Code がターミナルを占有しているので、選択画面は別�
 `display-popup` には tmux 3.2 以上が必要。
 
 ```tmux
-bind-key u display-popup -E -w 80% -h 60% "cclinks"
+bind-key u display-popup -E -w 90% -h 70% "cclinks"
 ```
 
 ポップアップはシェルの rc を読まないため、tmux サーバーが起動したときの PATH に依存する。
