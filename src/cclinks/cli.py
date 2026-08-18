@@ -241,6 +241,9 @@ def choose(lines: list[str], header: str | None = None) -> str | None:
         # takes the screen and hands it back on exit.
         "--reverse",
         "--no-multi",
+        # A match deep in a URL would otherwise scroll that row sideways, and a
+        # row that slides left no longer lines up with the columns beside it.
+        "--no-hscroll",
         f"--delimiter={_INDEX_SEPARATOR}",
         # Hide the bookkeeping field from the list and from the search.
         "--with-nth=2..",

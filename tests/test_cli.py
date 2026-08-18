@@ -376,6 +376,15 @@ class TestChoose:
         cli.choose(["0\thttps://a.example"])
         assert not any(argument.startswith("--height") for argument in fzf_argv["argv"])
 
+    def test_rows_do_not_slide_sideways(self, fzf_argv):
+        """A match deep in a URL made fzf scroll that row horizontally.
+
+        With three aligned columns, a row that slides left stops lining up with
+        the ones around it and the list stops being scannable.
+        """
+        cli.choose(["0\thttps://a.example"])
+        assert "--no-hscroll" in fzf_argv["argv"]
+
     def test_the_index_field_is_hidden(self, fzf_argv):
         """The index is bookkeeping: it must not be shown, nor searched."""
         cli.choose(["0\thttps://a.example"])
