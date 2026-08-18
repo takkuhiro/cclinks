@@ -8,7 +8,9 @@ original line back on selection, so the URL must survive being parsed out again.
 import pytest
 
 from cclinks import cli
+from cclinks.collect import SourcedLink
 from cclinks.links import Link
+from cclinks.sources.base import SessionInfo
 
 LABELLED = Link(url="https://a.example/x", label="Deno のマニュアル")
 BARE = Link(url="https://b.example/y", label="https://b.example/y")
@@ -19,7 +21,8 @@ class TestPlainFormatting:
         assert "\x1b[" not in cli.format_line(LABELLED)
 
     def test_print_mode_stays_plain(self, monkeypatch, capsys):
-        monkeypatch.setattr(cli, "collect_links", lambda cwd, active=False: [LABELLED])
+        item = SourcedLink(link=LABELLED, session=SessionInfo(session_id="s1", project="p"))
+        monkeypatch.setattr(cli, "collect_links", lambda cwd, **kwargs: [item])
         cli.main(["--print"])
         assert "\x1b[" not in capsys.readouterr().out
 
@@ -53,13 +56,34 @@ class TestColoredFormatting:
         assert "\x1b[32m" in cli.format_line(LABELLED, color=True)
 
 
-class TestUrlRecovery:
-    @pytest.mark.parametrize("link", [LABELLED, BARE])
-    def test_url_survives_coloring(self, link):
-        assert cli.url_from_line(cli.format_line(link, color=True)) == link.url
+class TestOriginColor:
+    """The origin is context, not the thing being read: it must not shout."""
 
-    def test_strips_escape_codes_before_matching(self):
-        assert cli.url_from_line("\x1b[90mhttps://a.example/x\x1b[0m") == "https://a.example/x"
+    def item(self):
+        return SourcedLink(
+            link=LABELLED,
+            session=SessionInfo(session_id="s1", project="cclinks", title="出自表示"),
+        )
 
-    def test_still_rejects_non_urls(self):
-        assert cli.url_from_line("\x1b[36mjust a label\x1b[0m") is None
+    def test_origin_is_colored_apart_from_the_label(self):
+        row = cli.format_row(self.item(), color=True, origin_width=20)
+        origin_code = row.split("cclinks")[0].split("\x1b[")[-1]
+        label_code = row.split("Deno")[0].split("\x1b[")[-1]
+        assert origin_code != label_code
+
+    def test_origin_color_comes_from_the_environment(self, monkeypatch):
+        monkeypatch.setenv("CCLINKS_ORIGIN_COLOR", "33")
+        assert "\x1b[33m" in cli.format_row(self.item(), color=True, origin_width=20)
+
+
+class TestRowRecovery:
+    """Coloring must not disturb finding the chosen row again."""
+
+    @pytest.mark.parametrize("color", [False, True])
+    def test_index_survives_coloring(self, color):
+        items = [
+            SourcedLink(link=LABELLED, session=SessionInfo(session_id="s1", project="a")),
+            SourcedLink(link=BARE, session=SessionInfo(session_id="s2", project="b")),
+        ]
+        lines = cli.picker_lines(items, color=color)
+        assert [cli.index_from_line(line) for line in lines] == [0, 1]

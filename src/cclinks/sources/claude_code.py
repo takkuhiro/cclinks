@@ -6,12 +6,16 @@ import json
 import os
 from pathlib import Path
 
-from .base import Source
+from .base import SessionInfo, Source
 
 __all__ = [
     "message_texts",
+    "session_info",
     "transcript_for_cwd",
+    "transcripts_for_cwd",
     "latest_transcript",
+    "all_transcripts",
+    "list_transcripts",
     "active_transcript",
     "find_transcript",
     "SOURCE",
@@ -19,6 +23,9 @@ __all__ = [
 
 _DEFAULT_PROJECTS = Path.home() / ".claude" / "projects"
 _DEFAULT_ACTIVE_FILE = Path.home() / ".claude" / "cclinks-active.json"
+
+# A session names itself in one line; anything longer is a paragraph, not a name.
+_TITLE_MAX = 60
 
 
 def _text_of(message) -> str:
@@ -38,14 +45,12 @@ def _text_of(message) -> str:
     )
 
 
-def message_texts(path: str | Path) -> list[str]:
-    """Message texts from a transcript, newest first."""
+def _rows(path: Path):
+    """Parsed JSONL rows, newest first. A file that will not read yields nothing."""
     try:
-        lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
-        return []
-
-    texts: list[str] = []
+        return
     for line in reversed(lines):
         line = line.strip()
         if not line:
@@ -54,7 +59,15 @@ def message_texts(path: str | Path) -> list[str]:
             row = json.loads(line)
         except json.JSONDecodeError:
             continue
-        if not isinstance(row, dict) or row.get("type") not in ("assistant", "user"):
+        if isinstance(row, dict):
+            yield row
+
+
+def message_texts(path: str | Path) -> list[str]:
+    """Message texts from a transcript, newest first."""
+    texts: list[str] = []
+    for row in _rows(Path(path)):
+        if row.get("type") not in ("assistant", "user"):
             continue
         # Subagent turns never reach the screen, so they are not what the user saw.
         if row.get("isSidechain"):
@@ -65,21 +78,119 @@ def message_texts(path: str | Path) -> list[str]:
     return texts
 
 
-def _newest(paths) -> Path | None:
-    found = sorted(paths, key=lambda path: path.stat().st_mtime, reverse=True)
-    return found[0] if found else None
+def _shorten(text: str) -> str:
+    text = " ".join(text.split())
+    return text if len(text) <= _TITLE_MAX else text[: _TITLE_MAX - 1] + "…"
+
+
+def _project_of(path: Path, cwd: str | None) -> str:
+    """A short name for the project a session belongs to.
+
+    The working directory recorded in the transcript is the reliable source.
+    Falling back to the encoded directory name is guesswork -- slashes and
+    dashes are both written as dashes -- but a wrong-looking last segment still
+    beats showing nothing.
+    """
+    if cwd:
+        return Path(cwd).name or cwd
+    encoded = path.parent.name.strip("-")
+    return encoded.rsplit("-", 1)[-1] or path.parent.name
+
+
+def session_info(path: str | Path) -> SessionInfo:
+    """Name the session a transcript belongs to.
+
+    Read from the end: the title a session settled on, the directory it ran in
+    and the branch it was on are all near the tail, so this stops as soon as it
+    has both. None of these rows are guaranteed to exist, which is why every one
+    of them has something behind it.
+    """
+    path = Path(path)
+    title = None
+    last_prompt = None
+    cwd = None
+    branch = None
+
+    for row in _rows(path):
+        kind = row.get("type")
+        if kind == "ai-title" and title is None:
+            candidate = row.get("aiTitle")
+            if isinstance(candidate, str) and candidate.strip():
+                title = _shorten(candidate)
+        elif kind == "last-prompt" and last_prompt is None:
+            candidate = row.get("lastPrompt")
+            if isinstance(candidate, str) and candidate.strip():
+                last_prompt = _shorten(candidate)
+        if cwd is None and isinstance(row.get("cwd"), str):
+            cwd = row["cwd"]
+            branch = row.get("gitBranch") or None
+        if title is not None and cwd is not None:
+            break
+
+    try:
+        mtime = path.stat().st_mtime
+    except OSError:
+        mtime = 0.0
+
+    return SessionInfo(
+        session_id=path.stem,
+        project=_project_of(path, cwd),
+        cwd=cwd,
+        title=title or last_prompt,
+        git_branch=branch,
+        mtime=mtime,
+    )
+
+
+def _mtime(path: Path) -> float:
+    try:
+        return path.stat().st_mtime
+    except OSError:  # vanished between the glob and the stat
+        return 0.0
+
+
+def _by_mtime(paths) -> list[Path]:
+    return sorted(paths, key=_mtime, reverse=True)
 
 
 def _projects_root(projects_dir: Path | str | None) -> Path:
     return Path(projects_dir) if projects_dir is not None else _DEFAULT_PROJECTS
 
 
-def latest_transcript(projects_dir: Path | str | None = None) -> Path | None:
-    """The most recently updated transcript, whatever the project."""
+def _encoded(cwd: str | Path) -> str:
+    # Claude Code names the project directory after the path, slashes turned into dashes.
+    return str(Path(cwd)).replace("/", "-").replace("_", "-").replace(".", "-")
+
+
+def all_transcripts(projects_dir: Path | str | None = None) -> list[Path]:
+    """Every session of every project, newest first."""
     root = _projects_root(projects_dir)
     if not root.is_dir():
-        return None
-    return _newest(root.glob("*/*.jsonl"))
+        return []
+    return _by_mtime(root.glob("*/*.jsonl"))
+
+
+def transcripts_for_cwd(
+    cwd: str | Path, projects_dir: Path | str | None = None
+) -> list[Path]:
+    """Every session of one project, newest first."""
+    directory = _projects_root(projects_dir) / _encoded(cwd)
+    if not directory.is_dir():
+        return []
+    return _by_mtime(directory.glob("*.jsonl"))
+
+
+def list_transcripts(cwd: str | None, scope: str = "all") -> list[Path]:
+    """The transcripts a scope covers, newest first."""
+    if scope == "project" and cwd is not None:
+        return transcripts_for_cwd(cwd)
+    return all_transcripts()
+
+
+def latest_transcript(projects_dir: Path | str | None = None) -> Path | None:
+    """The most recently updated transcript, whatever the project."""
+    found = all_transcripts(projects_dir)
+    return found[0] if found else None
 
 
 def transcript_for_cwd(
@@ -90,16 +201,9 @@ def transcript_for_cwd(
     With `fallback`, fall back to the most recent session anywhere, which is what
     you want when the working directory is arbitrary.
     """
-    root = _projects_root(projects_dir)
-    # Claude Code names the project directory after the path, slashes turned into dashes.
-    encoded = str(Path(cwd)).replace("/", "-").replace("_", "-").replace(".", "-")
-    directory = root / encoded
-
-    if directory.is_dir():
-        exact = _newest(directory.glob("*.jsonl"))
-        if exact is not None:
-            return exact
-
+    found = transcripts_for_cwd(cwd, projects_dir)
+    if found:
+        return found[0]
     return latest_transcript(projects_dir) if fallback else None
 
 
@@ -151,4 +255,6 @@ SOURCE = Source(
     find_transcript=find_transcript,
     message_texts=message_texts,
     active_transcript=active_transcript,
+    list_transcripts=list_transcripts,
+    session_info=session_info,
 )

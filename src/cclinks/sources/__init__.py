@@ -12,9 +12,9 @@ module here plus an entry in SOURCES.
 from __future__ import annotations
 
 from . import claude_code
-from .base import Source
+from .base import SessionInfo, Source
 
-__all__ = ["Source", "SOURCES", "DEFAULT_SOURCE", "get"]
+__all__ = ["SessionInfo", "Source", "SOURCES", "DEFAULT_SOURCE", "get"]
 
 SOURCES: dict[str, Source] = {
     "claude": claude_code.SOURCE,

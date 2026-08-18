@@ -1,7 +1,7 @@
 [project]
 name = "cclinks"
-version = "0.1.1"
-description = "Open links from a Claude Code session with the keyboard, including Markdown links the terminal never shows"
+version = "0.2.0"
+description = "Open links from your Claude Code sessions with the keyboard, including Markdown links the terminal never shows"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
